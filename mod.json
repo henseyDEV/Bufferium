@@ -1,0 +1,9 @@
+{
+  "geode": "5.11.2",
+  "gd": { "win": "2.2081" },
+  "id": "rippd.bufferium",
+  "name": "Bufferium",
+  "version": "v1.0.0",
+  "developer": "rippd",
+  "description": "Bufferium V1.00 - in-game F7 panel for the predictive input buffer: on/off checkbox, strength chips, live console buttons."
+}
