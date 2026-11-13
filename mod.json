@@ -1,9 +1,30 @@
 {
   "geode": "5.11.2",
-  "gd": { "win": "2.2081" },
+  "gd": {
+    "win": "2.2081"
+  },
   "id": "rippd.bufferium",
   "name": "Bufferium",
   "version": "v1.0.0",
   "developer": "rippd",
-  "description": "Bufferium V1.00 - in-game F7 panel for the predictive input buffer: on/off checkbox, strength chips, live console buttons."
+  "description": "Bufferium V1.00 - in-game F7 panel for the predictive input buffer: on/off checkbox, strength chips, live console buttons.",
+  "settings": {
+    "toggle-key": {
+      "type": "string",
+      "name": "Panel key",
+      "description": "Key that shows/hides the Bufferium panel inside a level. Change this if F7 does nothing for you (laptop Fn keys, key used by another mod).",
+      "default": "F7",
+      "one-of": [
+        "F7",
+        "F8",
+        "F9",
+        "F4",
+        "Insert",
+        "Home",
+        "End",
+        "Page Up",
+        "Page Down"
+      ]
+    }
+  }
 }

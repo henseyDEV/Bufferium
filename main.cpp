@@ -9,6 +9,7 @@
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
+#include <Geode/modify/PauseLayer.hpp>
 #include <array>
 #include <atomic>
 #include <cmath>
@@ -79,6 +80,26 @@ void applySavedOnce() {
     done = true;
     int64_t s = Mod::get()->getSavedValue<int64_t>("stage", -1);
     if (s >= 0 && s <= 4) writeStage((int)s);
+}
+
+// ---------------------------------------------------------------------------
+// Panel key (configurable in the mod's settings, default F7)
+// ---------------------------------------------------------------------------
+std::string toggleKeyName() {
+    return Mod::get()->getSettingValue<std::string>("toggle-key");
+}
+
+enumKeyCodes toggleKey() {
+    auto n = toggleKeyName();
+    if (n == "F8") return KEY_F8;
+    if (n == "F9") return KEY_F9;
+    if (n == "F4") return KEY_F4;
+    if (n == "Insert") return KEY_Insert;
+    if (n == "Home") return KEY_Home;
+    if (n == "End") return KEY_End;
+    if (n == "Page Up") return KEY_PageUp;
+    if (n == "Page Down") return KEY_PageDown;
+    return KEY_F7;
 }
 
 // ---------------------------------------------------------------------------
@@ -330,7 +351,7 @@ protected:
         closeItem->setPosition({W - 16.f - bw / 2.f, 34.f});
         menu->addChild(closeItem);
 
-        auto hint = CCLabelBMFont::create("F6 next   |   F7 hide", "chatFont.fnt");
+        auto hint = CCLabelBMFont::create(fmt::format("F6 next   |   {} hide", toggleKeyName()).c_str(), "chatFont.fnt");
         hint->setScale(.5f);
         hint->setColor({120, 126, 146});
         hint->setPosition({W / 2.f, 10.f});
@@ -518,10 +539,24 @@ public:
 // hooks
 // ---------------------------------------------------------------------------
 class $modify(BFKeys, CCKeyboardDispatcher) {
+    // run before other mods' keyboard hooks, so nobody can swallow the key before we see it
+    static void onModify(auto& self) {
+        auto r = self.setHookPriority("CCKeyboardDispatcher::dispatchKeyboardMSG", -1000);
+        if (r.isErr()) log::warn("Bufferium: could not set keyboard hook priority");
+    }
+
     bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool repeat, double ts) {
-        if (down && !repeat && PlayLayer::get()) {
-            if (key == KEY_F7) { BufferHud::toggle(); return true; }
-            if (key == KEY_F6) BufferHud::peek();   // not consumed: the buffer still sees it
+        if (down && !repeat) {
+            bool inLevel = PlayLayer::get() != nullptr;
+            if (key == toggleKey()) {
+                if (inLevel) {
+                    log::info("Bufferium: {} pressed, toggling panel", toggleKeyName());
+                    BufferHud::toggle();
+                    return true;
+                }
+                log::info("Bufferium: {} pressed but you are not in a level", toggleKeyName());
+            }
+            if (key == KEY_F6 && inLevel) BufferHud::peek();   // not consumed: the buffer still sees it
         }
         return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, repeat, ts);
     }
@@ -541,5 +576,27 @@ class $modify(BFPlayLayer, PlayLayer) {
         closeOriginalConsole();
         applySavedOnce();
         return true;
+    }
+};
+
+// fallback: a button on the pause screen, so the panel can be opened without any key
+class $modify(BFPause, PauseLayer) {
+    void customSetup() {
+        PauseLayer::customSetup();
+        auto pill = makePill("BUFFER", 64.f, 26.f, {40, 48, 74});
+        auto item = CCMenuItemExt::createSpriteExtra(pill, [](CCObject*) {
+            BufferHud::toggle();
+        });
+        auto menu = typeinfo_cast<CCMenu*>(this->getChildByID("right-button-menu"));
+        if (menu) {
+            menu->addChild(item);
+            menu->updateLayout();
+        } else {
+            auto win = CCDirector::get()->getWinSize();
+            auto own = CCMenu::create();
+            own->setPosition({win.width - 50.f, 40.f});
+            own->addChild(item);
+            this->addChild(own);
+        }
     }
 };
