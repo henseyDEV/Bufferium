@@ -10,6 +10,7 @@
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/PauseLayer.hpp>
+#include <Geode/ui/Notification.hpp>
 #include <array>
 #include <atomic>
 #include <cmath>
@@ -80,26 +81,6 @@ void applySavedOnce() {
     done = true;
     int64_t s = Mod::get()->getSavedValue<int64_t>("stage", -1);
     if (s >= 0 && s <= 4) writeStage((int)s);
-}
-
-// ---------------------------------------------------------------------------
-// Panel key (configurable in the mod's settings, default F7)
-// ---------------------------------------------------------------------------
-std::string toggleKeyName() {
-    return Mod::get()->getSettingValue<std::string>("toggle-key");
-}
-
-enumKeyCodes toggleKey() {
-    auto n = toggleKeyName();
-    if (n == "F8") return KEY_F8;
-    if (n == "F9") return KEY_F9;
-    if (n == "F4") return KEY_F4;
-    if (n == "Insert") return KEY_Insert;
-    if (n == "Home") return KEY_Home;
-    if (n == "End") return KEY_End;
-    if (n == "Page Up") return KEY_PageUp;
-    if (n == "Page Down") return KEY_PageDown;
-    return KEY_F7;
 }
 
 // ---------------------------------------------------------------------------
@@ -351,7 +332,7 @@ protected:
         closeItem->setPosition({W - 16.f - bw / 2.f, 34.f});
         menu->addChild(closeItem);
 
-        auto hint = CCLabelBMFont::create(fmt::format("F6 next   |   {} hide", toggleKeyName()).c_str(), "chatFont.fnt");
+        auto hint = CCLabelBMFont::create("F6 next   |   F7 hide", "chatFont.fnt");
         hint->setScale(.5f);
         hint->setColor({120, 126, 146});
         hint->setPosition({W / 2.f, 10.f});
@@ -548,13 +529,13 @@ class $modify(BFKeys, CCKeyboardDispatcher) {
     bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool repeat, double ts) {
         if (down && !repeat) {
             bool inLevel = PlayLayer::get() != nullptr;
-            if (key == toggleKey()) {
+            if (key == KEY_F7 || key == KEY_F8) {
                 if (inLevel) {
-                    log::info("Bufferium: {} pressed, toggling panel", toggleKeyName());
+                    log::info("Bufferium: F7/F8 pressed, toggling panel");
                     BufferHud::toggle();
                     return true;
                 }
-                log::info("Bufferium: {} pressed but you are not in a level", toggleKeyName());
+                log::info("Bufferium: F7/F8 pressed but PlayLayer::get() is null");
             }
             if (key == KEY_F6 && inLevel) BufferHud::peek();   // not consumed: the buffer still sees it
         }
@@ -566,6 +547,12 @@ class $modify(BFMenu, MenuLayer) {
     bool init() {
         if (!MenuLayer::init()) return false;
         closeOriginalConsole();
+        static bool shown = false;
+        if (!shown) {
+            shown = true;
+            log::info("Bufferium v1.0.1 hooks are running (MenuLayer)");
+            Notification::create("Bufferium v1.0.1 loaded", NotificationIcon::Success, 3.f)->show();
+        }
         return true;
     }
 };
@@ -583,6 +570,7 @@ class $modify(BFPlayLayer, PlayLayer) {
 class $modify(BFPause, PauseLayer) {
     void customSetup() {
         PauseLayer::customSetup();
+        log::info("Bufferium: adding pause button");
         auto pill = makePill("BUFFER", 64.f, 26.f, {40, 48, 74});
         auto item = CCMenuItemExt::createSpriteExtra(pill, [](CCObject*) {
             BufferHud::toggle();

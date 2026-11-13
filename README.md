@@ -5,7 +5,7 @@ Install BOTH files in Geometry Dash/geode/mods/:
   2. Bufferium.geode       (this mod, built from this project)
 Remove the old FWCmain.geode first.
 
-- F7 (changeable in the mod settings): show / hide the Bufferium panel (inside a level)
+- F7 or F8: show / hide the Bufferium panel (inside a level)
 - Pause screen: a BUFFER button also opens the panel
 - Checkbox: buffer on / off
 - Chips: 2/2, 4/4, 8/8, 16/8
