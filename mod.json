@@ -5,7 +5,7 @@
   },
   "id": "rippd.bufferium",
   "name": "Bufferium",
-  "version": "v1.0.1",
+  "version": "v1.0.2",
   "developer": "rippd",
-  "description": "Bufferium V1.00 - in-game F7 panel for the predictive input buffer: on/off checkbox, strength chips, live console buttons."
+  "description": "Bufferium V1.00 - in-game Right Ctrl panel for the predictive input buffer: on/off checkbox, strength chips, live console buttons."
 }

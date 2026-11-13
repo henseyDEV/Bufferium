@@ -1,6 +1,6 @@
 // Bufferium V1.00 by rippd - companion for the predictive input buffer (ai.predictivebuffer,
 // build stamp 0x6ad5519c). Use it together with FWCmain-quiet.geode.
-//   F7  show / hide the panel      F6  (the buffer's own key) makes the panel peek in
+//   Right Ctrl  show / hide the panel      F6  (the buffer's own key) makes the panel peek in
 //
 // The buffer keeps its strength in one static struct. This mod finds that struct inside the
 // loaded DLL, checks the DLL is exactly the build it was written for, and only then reads or
@@ -129,6 +129,14 @@ void closeOriginalConsole() {
     char t[256] = {};
     GetConsoleTitleA(t, sizeof(t));
     if (std::strstr(t, "Predictive Input Buffer")) FreeConsole();
+}
+
+// Right Ctrl. Depending on the build GD reports it either as KEY_RightControl or as the generic
+// KEY_Control, so for the generic one we ask Windows which physical Ctrl is actually down.
+bool isRightCtrl(enumKeyCodes key) {
+    if (key == KEY_RightControl) return true;
+    if (key == KEY_Control) return (GetAsyncKeyState(VK_RCONTROL) & 0x8000) != 0;
+    return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -332,7 +340,7 @@ protected:
         closeItem->setPosition({W - 16.f - bw / 2.f, 34.f});
         menu->addChild(closeItem);
 
-        auto hint = CCLabelBMFont::create("F6 next   |   F7 hide", "chatFont.fnt");
+        auto hint = CCLabelBMFont::create("F6 next   |   Right Ctrl hide", "chatFont.fnt");
         hint->setScale(.5f);
         hint->setColor({120, 126, 146});
         hint->setPosition({W / 2.f, 10.f});
@@ -494,7 +502,7 @@ public:
 
     static bool visible() { return s_inst && !s_inst->m_closing; }
 
-    // F7
+    // Right Ctrl
     static void toggle() {
         if (visible()) {
             playSfx("quitSound_01.ogg", 1.f, .5f);
@@ -529,13 +537,14 @@ class $modify(BFKeys, CCKeyboardDispatcher) {
     bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool repeat, double ts) {
         if (down && !repeat) {
             bool inLevel = PlayLayer::get() != nullptr;
-            if (key == KEY_F7 || key == KEY_F8) {
+            if (isRightCtrl(key)) {
                 if (inLevel) {
-                    log::info("Bufferium: F7/F8 pressed, toggling panel");
+                    log::info("Bufferium: Right Ctrl pressed, toggling panel");
                     BufferHud::toggle();
-                    return true;
+                } else {
+                    log::info("Bufferium: Right Ctrl pressed but PlayLayer::get() is null");
                 }
-                log::info("Bufferium: F7/F8 pressed but PlayLayer::get() is null");
+                // not consumed: Ctrl is a modifier key, let the game see it too
             }
             if (key == KEY_F6 && inLevel) BufferHud::peek();   // not consumed: the buffer still sees it
         }
@@ -550,8 +559,8 @@ class $modify(BFMenu, MenuLayer) {
         static bool shown = false;
         if (!shown) {
             shown = true;
-            log::info("Bufferium v1.0.1 hooks are running (MenuLayer)");
-            Notification::create("Bufferium v1.0.1 loaded", NotificationIcon::Success, 3.f)->show();
+            log::info("Bufferium v1.0.2 hooks are running (MenuLayer)");
+            Notification::create("Bufferium v1.0.2 loaded", NotificationIcon::Success, 3.f)->show();
         }
         return true;
     }
